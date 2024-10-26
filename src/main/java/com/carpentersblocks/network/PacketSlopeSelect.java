@@ -1,6 +1,8 @@
 package com.carpentersblocks.network;
 
 import java.io.IOException;
+
+import cpw.mods.fml.common.FMLCommonHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import com.carpentersblocks.block.BlockCarpentersSlope;
@@ -29,26 +31,27 @@ public class PacketSlopeSelect implements ICarpentersPacket {
         boolean incDmg = bbis.readBoolean();
         ItemStack itemStack = entityPlayer.inventory.getStackInSlot(slot);
 
-        if (itemStack != null && BlockProperties.toBlock(itemStack).equals(BlockRegistry.blockCarpentersSlope)) {
+        if (FMLCommonHandler.instance().getMinecraftServerInstance().getConfigurationManager().func_152596_g(entityPlayer.getGameProfile())) {
 
-            int maxDmg = BlockCarpentersSlope.slopeType.length - 1;
-            int itemDmg = itemStack.getItemDamage();
-            itemDmg += incDmg ? 1 : -1;
+            if (itemStack != null && BlockProperties.toBlock(itemStack).equals(BlockRegistry.blockCarpentersSlope)) {
 
-            if (itemDmg > maxDmg) {
-                itemDmg = 0;
-            } else if (itemDmg < 0) {
-                itemDmg = maxDmg;
+                int maxDmg = BlockCarpentersSlope.slopeType.length - 1;
+                int itemDmg = itemStack.getItemDamage();
+                itemDmg += incDmg ? 1 : -1;
+
+                if (itemDmg > maxDmg) {
+                    itemDmg = 0;
+                } else if (itemDmg < 0) {
+                    itemDmg = maxDmg;
+                }
+
+                itemStack.setItemDamage(itemDmg);
             }
-
-            itemStack.setItemDamage(itemDmg);
-
         }
     }
 
     @Override
-    public void appendData(ByteBuf buffer) throws IOException
-    {
+    public void appendData(ByteBuf buffer) {
         buffer.writeInt(slot);
         buffer.writeBoolean(incDamage);
     }

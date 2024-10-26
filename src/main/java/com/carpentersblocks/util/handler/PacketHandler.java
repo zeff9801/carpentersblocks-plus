@@ -24,7 +24,7 @@ public class PacketHandler {
 
     private final static List<Class> packetCarrier;
     static {
-        packetCarrier = new ArrayList<Class>();
+        packetCarrier = new ArrayList<>();
         packetCarrier.add(PacketActivateBlock.class);
         packetCarrier.add(PacketEnrichPlant.class);
         packetCarrier.add(PacketSlopeSelect.class);
@@ -56,7 +56,7 @@ public class PacketHandler {
 
         try {
             packet.appendData(buffer);
-        } catch (IOException e) { }
+        } catch (IOException ignored) { }
 
         CarpentersBlocks.channel.sendToServer(new FMLProxyPacket(new C17PacketCustomPayload(CarpentersBlocks.MODID, buffer)));
     }

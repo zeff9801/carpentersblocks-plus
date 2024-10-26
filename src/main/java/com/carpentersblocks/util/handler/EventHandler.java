@@ -92,6 +92,8 @@ public class EventHandler {
         }
     }
 
+    // An event to ignore on player interactions, because otherwise the mod will cancel its own event.
+    public static PlayerInteractEvent IGNORE_INTERACT_EVENT;
     @SubscribeEvent
     /**
      * Used to store side clicked and also forces onBlockActivated
@@ -100,7 +102,7 @@ public class EventHandler {
      */
     public void onPlayerInteractEvent(PlayerInteractEvent event)
     {
-        if (event.isCanceled()) {
+        if (event.isCanceled() || (event == IGNORE_INTERACT_EVENT)) {
             return;
         }
 
@@ -109,7 +111,7 @@ public class EventHandler {
         if (block instanceof BlockCoverable) {
 
             eventFace = event.face;
-            eventEntityPlayer = event.entityPlayer;
+            EntityPlayer eventEntityPlayer = event.entityPlayer; //Was leaking the world
 
             ItemStack itemStack = eventEntityPlayer.getHeldItem();
 
@@ -156,10 +158,13 @@ public class EventHandler {
                      */
 
                     if (eventEntityPlayer.isSneaking()) {
-                        if (!(itemStack != null && itemStack.getItem() instanceof ItemBlock && !BlockProperties.isOverlay(itemStack))) {
-                            event.setCanceled(true); // Normally prevents server event, but sometimes it doesn't, so check below
-                            if (event.entity.worldObj.isRemote) {
-                                PacketHandler.sendPacketToServer(new PacketActivateBlock(event.x, event.y, event.z, event.face));
+                        if (FMLCommonHandler.instance().getMinecraftServerInstance().getConfigurationManager().func_152596_g(event.entityPlayer.getGameProfile())) {
+
+                            if (!(itemStack != null && itemStack.getItem() instanceof ItemBlock && !BlockProperties.isOverlay(itemStack))) {
+                                event.setCanceled(true); // Normally prevents server event, but sometimes it doesn't, so check below
+                                if (event.entity.worldObj.isRemote) {
+                                    PacketHandler.sendPacketToServer(new PacketActivateBlock(event.x, event.y, event.z, event.face));
+                                }
                             }
                         }
                     }

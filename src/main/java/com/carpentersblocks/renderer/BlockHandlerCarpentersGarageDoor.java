@@ -97,7 +97,7 @@ public class BlockHandlerCarpentersGarageDoor extends BlockHandlerBase {
      */
     private ItemStack getOpenCover()
     {
-        return getCoverForRendering(data.getBottommost(TE.getWorldObj(), TE.xCoord, TE.yCoord, TE.zCoord));
+        return getCoverForRendering(data.getBottommost(renderBlocks.blockAccess, TE.xCoord, TE.yCoord, TE.zCoord));
     }
 
     /**

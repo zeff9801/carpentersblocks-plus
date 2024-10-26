@@ -1,5 +1,6 @@
 package com.carpentersblocks.renderer;
 
+import cpw.mods.fml.common.Optional;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockGrass;
 import net.minecraft.block.BlockRailBase;
@@ -35,7 +36,8 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class BlockHandlerBase implements ISimpleBlockRenderingHandler {
+@Optional.Interface(modid = "angelica", iface = "com.gtnewhorizons.angelica.interfaces.IThreadSafeISBRH")
+public abstract class BlockHandlerBase implements ISimpleBlockRenderingHandler, IThreadSafeISBRH {
 
     public static final int PASS_OPAQUE = 0;
     public static final int PASS_ALPHA  = 1;
@@ -114,11 +116,12 @@ public class BlockHandlerBase implements ISimpleBlockRenderingHandler {
     @Override
     public boolean renderWorldBlock(IBlockAccess blockAccess, int x, int y, int z, Block block, int modelID, RenderBlocks renderBlocks)
     {
-        VertexHelper.vertexCount = 0;
+        final VertexHelper vertexHelper = VertexHelper.get();
+        vertexHelper.vertexCount = 0;
         renderPass = MinecraftForgeClient.getRenderPass();
         TileEntity TE_default = blockAccess.getTileEntity(x, y, z);
 
-        if (TE_default != null && TE_default instanceof TEBase) {
+        if (TE_default instanceof TEBase) {
 
             TE = (TEBase) TE_default;
             srcBlock = block;
@@ -129,7 +132,7 @@ public class BlockHandlerBase implements ISimpleBlockRenderingHandler {
             renderSideBlocks(x, y, z);
 
             if (FeatureRegistry.enableRoutableFluids) {
-                VertexHelper.vertexCount += RoutableFluidsHelper.render(TE, renderBlocks, x, y, z) ? 4 : 0;
+                vertexHelper.vertexCount += RoutableFluidsHelper.render(TE, renderBlocks, x, y, z) ? 4 : 0;
             }
 
             if (FeatureRegistry.enableRailSlopes)
@@ -166,7 +169,7 @@ public class BlockHandlerBase implements ISimpleBlockRenderingHandler {
             }
         }
 
-        return VertexHelper.vertexCount > 0;
+        return vertexHelper.vertexCount > 0;
     }
 
     @Override
@@ -613,17 +616,18 @@ public class BlockHandlerBase implements ISimpleBlockRenderingHandler {
 
         boolean temp_dye_state = suppressDyeColor;
         suppressDyeColor = true;
+        final RenderHelper renderHelper = RenderHelper.get();
 
         if (hasDesign && !suppressChiselDesign && renderPass == PASS_ALPHA) {
-            RenderHelper.setOffset(RenderHelper.OFFSET_MIN);
+            renderHelper.setOffset(RenderHelper.OFFSET_MIN);
             renderChiselDesign(x, y, z, side);
-            RenderHelper.clearOffset();
+            renderHelper.clearOffset();
         }
 
         if (hasOverlay && !suppressOverlay && renderPass == PASS_OPAQUE) {
-            RenderHelper.setOffset(overlayOffset);
+            renderHelper.setOffset(overlayOffset);
             renderOverlay(x, y, z, side);
-            RenderHelper.clearOffset();
+            renderHelper.clearOffset();
         }
 
         suppressDyeColor = temp_dye_state;
@@ -697,7 +701,7 @@ public class BlockHandlerBase implements ISimpleBlockRenderingHandler {
 
         lightingHelper.setupColor(x, y, z, side, color, icon);
         render(x, y, z, side, icon);
-        VertexHelper.postRender();
+        VertexHelper.get().postRender();
     }
 
     /**
@@ -882,38 +886,38 @@ public class BlockHandlerBase implements ISimpleBlockRenderingHandler {
 
         renderBlocks.enableAO = getEnableAO(itemStack);
 
-        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(TE.getWorldObj(), x, y - 1, z, DOWN) || renderBlocks.renderMinY > 0.0D)
-        {
+        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(renderBlocks.blockAccess, x, y - 1, z, DOWN)
+                || renderBlocks.renderMinY > 0.0D) {
             lightingHelper.setupLightingYNeg(itemStack, x, y, z);
             delegateSideRender(itemStack, x, y, z, DOWN);
         }
 
-        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(TE.getWorldObj(), x, y + 1, z, UP) || renderBlocks.renderMaxY < 1.0D)
-        {
+        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(renderBlocks.blockAccess, x, y + 1, z, UP)
+                || renderBlocks.renderMaxY < 1.0D) {
             lightingHelper.setupLightingYPos(itemStack, x, y, z);
             delegateSideRender(itemStack, x, y, z, UP);
         }
 
-        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(TE.getWorldObj(), x, y, z - 1, NORTH) || renderBlocks.renderMinZ > 0.0D)
-        {
+        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(renderBlocks.blockAccess, x, y, z - 1, NORTH)
+                || renderBlocks.renderMinZ > 0.0D) {
             lightingHelper.setupLightingZNeg(itemStack, x, y, z);
             delegateSideRender(itemStack, x, y, z, NORTH);
         }
 
-        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(TE.getWorldObj(), x, y, z + 1, SOUTH) || renderBlocks.renderMaxZ < 1.0D)
-        {
+        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(renderBlocks.blockAccess, x, y, z + 1, SOUTH)
+                || renderBlocks.renderMaxZ < 1.0D) {
             lightingHelper.setupLightingZPos(itemStack, x, y, z);
             delegateSideRender(itemStack, x, y, z, SOUTH);
         }
 
-        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(TE.getWorldObj(), x - 1, y, z, WEST) || renderBlocks.renderMinX > 0.0D)
-        {
+        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(renderBlocks.blockAccess, x - 1, y, z, WEST)
+                || renderBlocks.renderMinX > 0.0D) {
             lightingHelper.setupLightingXNeg(itemStack, x, y, z);
             delegateSideRender(itemStack, x, y, z, WEST);
         }
 
-        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(TE.getWorldObj(), x + 1, y, z, EAST) || renderBlocks.renderMaxX < 1.0D)
-        {
+        if (renderBlocks.renderAllFaces || srcBlock.shouldSideBeRendered(renderBlocks.blockAccess, x + 1, y, z, EAST)
+                || renderBlocks.renderMaxX < 1.0D) {
             lightingHelper.setupLightingXPos(itemStack, x, y, z);
             delegateSideRender(itemStack, x, y, z, EAST);
         }

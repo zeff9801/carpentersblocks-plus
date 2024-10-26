@@ -1,6 +1,8 @@
 package com.carpentersblocks.network;
 
 import java.io.IOException;
+
+import cpw.mods.fml.common.FMLCommonHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -33,12 +35,14 @@ public class PacketEnrichPlant extends TilePacket {
         hexColor = bbis.readInt();
 
         TEBase TE = (TEBase) world.getTileEntity(x, y, z);
+        if (FMLCommonHandler.instance().getMinecraftServerInstance().getConfigurationManager().func_152596_g(entityPlayer.getGameProfile())) {
 
         if (TE != null) {
-            if (hexColor != 16777215 && !TE.hasAttribute(TE.ATTR_FERTILIZER)) {
-                TE.addAttribute(TE.ATTR_FERTILIZER, new ItemStack(Items.dye, 1, 15));
+            if (hexColor != 16777215 && !TE.hasAttribute(TEBase.ATTR_FERTILIZER)) {
+                TE.addAttribute(TEBase.ATTR_FERTILIZER, new ItemStack(Items.dye, 1, 15));
                 EntityLivingUtil.decrementCurrentSlot(entityPlayer);
             }
+        }
         }
     }
 

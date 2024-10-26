@@ -102,7 +102,9 @@ public class TEBase extends TileEntity implements IProtected {
         }
 
         // Block either loaded or changed, update lighting and render state
-        updateWorldAndLighting();
+        if (lightValue > -1) {
+            updateWorldAndLighting();
+        }
     }
 
     @Override
@@ -111,12 +113,10 @@ public class TEBase extends TileEntity implements IProtected {
         super.writeToNBT(nbt);
 
         NBTTagList tagList = new NBTTagList();
-        Iterator iterator = cbAttrMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry entry = (Map.Entry) iterator.next();
+        for (Map.Entry<Byte, Attribute> byteAttributeEntry : cbAttrMap.entrySet()) {
             NBTTagCompound nbt1 = new NBTTagCompound();
-            nbt1.setByte(TAG_ATTR, (Byte) entry.getKey());
-            ((Attribute)entry.getValue()).writeToNBT(nbt1);
+            nbt1.setByte(TAG_ATTR, (Byte) byteAttributeEntry.getKey());
+            byteAttributeEntry.getValue().writeToNBT(nbt1);
             tagList.appendTag(nbt1);
         }        
         nbt.setTag(TAG_ATTR_LIST, tagList);
@@ -245,14 +245,9 @@ public class TEBase extends TileEntity implements IProtected {
         return cbAttrMap.containsKey(attrId);
     }
 
-    public ItemStack getAttribute(byte attrId)
-    {
+    public ItemStack getAttribute(byte attrId) {
         Attribute attribute = cbAttrMap.get(attrId);
-        if (attribute != null) {
-            return attribute.getItemStack();
-        }
-        
-        return null;
+        return (attribute != null) ? attribute.getItemStack() : null;
     }
 
     public ItemStack getAttributeForDrop(byte attrId)
@@ -525,27 +520,24 @@ public class TEBase extends TileEntity implements IProtected {
      * @param  z the z coordinate
      * @return a light value from 0 to 15
      */
-    protected int getDynamicLightValue()
-    {
+    protected int getDynamicLightValue() {
         int value = 0;
 
         if (FeatureRegistry.enableIllumination && hasAttribute(ATTR_ILLUMINATOR)) {
             return 15;
         } else {
-            // Find greatest light output from attributes
+            // Find the greatest light output from attributes
             calcLighting = true;
-            Iterator it = cbAttrMap.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry pair = (Map.Entry)it.next();
-                ItemStack itemStack = BlockProperties.getCallableItemStack(((Attribute)pair.getValue()).getItemStack());
+            for (Map.Entry<Byte, Attribute> byteAttributeEntry : cbAttrMap.entrySet()) {
+                ItemStack itemStack = BlockProperties.getCallableItemStack(((Attribute) ((Map.Entry<?, ?>) byteAttributeEntry).getValue()).getItemStack());
                 Block block = BlockProperties.toBlock(itemStack);
 
                 if (block != Blocks.air) {
 
                     // Determine metadata-sensitive light value (usually recursive, and not useful)
-                    setMetadata(itemStack.getItemDamage());
+                    //TODO comment to test      setMetadata(itemStack.getItemDamage());
                     int sensitiveLight = block.getLightValue(getWorldObj(), xCoord, yCoord, zCoord);
-                    restoreMetadata();
+                    //TODO comment to test      restoreMetadata();
 
                     if (sensitiveLight > 0) {
                         value = Math.max(value, sensitiveLight);
@@ -573,8 +565,7 @@ public class TEBase extends TileEntity implements IProtected {
     /**
      * Performs world update and refreshes lighting.
      */
-    private void updateWorldAndLighting()
-    {
+    private void updateWorldAndLighting() {
         World world = getWorldObj();
         if (world != null) {
             updateCachedLighting();
